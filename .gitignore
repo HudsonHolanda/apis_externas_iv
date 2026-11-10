@@ -1,0 +1,17 @@
+cat > .gitignore <<'EOF'
+# Ambiente virtual
+.venv/
+venv/
+
+# Python
+__pycache__/
+*.pyc
+
+# Saídas e cache gerados pelos scripts
+saida/
+cache/
+
+# Chaves e variáveis de ambiente
+.env
+*.env
+EOF
