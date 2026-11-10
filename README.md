@@ -6,6 +6,7 @@ Três mini-projetos de análise e visualização de dados públicos.
 |---|---|---|---|
 | `7_agro_clima/` | Monitor agropecuário e climático | IBGE (SIDRA), Open-Meteo, CPTEC/INPE via BrasilAPI | Nenhuma |
 | `8_compras_publicas/` | Painel de compras públicas federais | Dados Abertos do Compras.gov.br, malhas do IBGE | Nenhuma |
+| `9_indicadores_economicos/` | Dashboard de indicadores econômicos brasileiros | Banco Central (SGS), IPEADATA (OData) | Nenhuma |
 
 ## Instalação
 
@@ -80,12 +81,81 @@ Mapas e gráficos HTML ficam em `saida/` (abra no navegador), com CSV ao lado.
 - O valor usado é o `valorGlobal` de cada contrato. Se houver termos aditivos ou valores extremos cadastrados, os rankings podem ser distorcidos por poucos registros.
 - O filtro por CNAE considera o CNAE **principal** do fornecedor.
 
+---
+
+## 9. Dashboard de Indicadores Econômicos Brasileiros
+
+Script: `9_indicadores_economicos/indicadores_economicos.py`.
+
+O dashboard consulta séries históricas do Banco Central (SGS) e do IPEADATA (OData), permite selecionar até cinco indicadores de fontes diferentes e comparar suas tendências em um gráfico normalizado (base 100). Também calcula a correlação entre dois indicadores e exibe um gráfico de dispersão com linha de tendência.
+
+Na raiz do repositório, execute:
+
+```bash
+# Instalar as dependências (inclui Streamlit para a interface web)
+pip install -r requirements.txt
+
+# Iniciar o dashboard
+streamlit run 9_indicadores_economicos/indicadores_economicos.py
+```
+
+O Streamlit abrirá a aplicação no navegador. Não é necessário entrar na pasta do exercício.
+
+**Como utilizar**
+
+1. Na barra lateral, defina a data inicial, a data final e a frequência da análise (mensal, trimestral ou anual).
+2. Selecione séries do catálogo inicial do Banco Central. Para outras séries SGS, informe os códigos numéricos separados por vírgula.
+3. Para consultar o IPEADATA, pesquise pelo nome da série (por exemplo: `PIB`, `inflação` ou `desemprego`) e selecione os resultados desejados.
+4. Selecione no máximo cinco indicadores no total, somando as séries do BCB e do IPEADATA.
+5. Clique em **Consultar indicadores**.
+6. Para séries regionais ou sociais do IPEADATA, selecione o território correspondente quando essa opção aparecer.
+7. Na aba **Comparação normalizada**, veja a evolução dos indicadores em base 100 e baixe o resultado em CSV.
+8. Na aba **Correlação**, escolha dois indicadores para calcular a correlação de Pearson. É possível calcular a correlação sobre os níveis ou sobre as variações percentuais.
+9. Na aba **Dados**, consulte os dados tratados e baixe a tabela em CSV.
+
+**Como funciona**
+
+- **Banco Central (SGS):** consulta os valores pela API de séries temporais, usando o código SGS e o período escolhido. O catálogo inicial inclui IPCA mensal, IGP-M, dólar comercial e séries da Selic. Códigos adicionais podem ser informados na interface.
+- **IPEADATA:** pesquisa o catálogo de metadados pelo nome da série e consulta os valores pelo código `SERCODIGO`, utilizando a API OData. A pesquisa permite localizar séries macroeconômicas, regionais e sociais disponíveis no serviço.
+- **Padronização:** os retornos das duas fontes são convertidos para tabelas com data e valor, permitindo que sejam tratados pelo Pandas independentemente da API de origem.
+- **Frequências:** as observações são agrupadas por mês, trimestre ou ano, conforme a escolha do usuário. O valor de cada período é a média das observações disponíveis. O dashboard não interpola datas ausentes nem cria observações artificiais.
+- **Normalização:** cada indicador é convertido para índice base 100, usando sua primeira observação válida dentro do período consultado. Assim, o gráfico compara variações relativas, mesmo quando os indicadores possuem escalas diferentes.
+- **Correlação:** as duas séries são alinhadas pelas datas em comum antes do cálculo de Pearson. São necessárias pelo menos três observações em comum e alguma variação nos valores. A linha de tendência é calculada sobre os pontos alinhados.
+- **Cache:** as consultas são armazenadas temporariamente em cache para reduzir chamadas repetidas às APIs durante a navegação.
+
+**Cuidados**
+
+- A normalização base 100 não é aplicada a séries cujo primeiro valor válido seja zero. Nesses casos, escolha outro período ou outra série.
+- Para taxas como juros e inflação, o índice base 100 compara a variação relativa da própria taxa; ele não representa diretamente a evolução acumulada do nível de preços.
+- Séries de frequências originalmente diferentes podem ter poucas datas em comum. Isso pode limitar o cálculo da correlação.
+- Correlação não significa causalidade. A associação entre os níveis de duas séries também pode ser influenciada por tendências comuns. A opção de calcular a correlação sobre variações percentuais ajuda a observar a relação entre as mudanças dos indicadores.
+- A disponibilidade, a periodicidade e o histórico variam conforme a série e a fonte. Uma consulta sem resultados pode indicar que não há observações para o código ou período selecionado.
+- O dashboard não exige autenticação, mas depende de conexão com a internet para consultar as APIs.
+
+**Fontes e documentação**
+
+- Banco Central — SGS: <https://www.bcb.gov.br/>
+- API SGS: <https://api.bcb.gov.br/dados/serie/bcdata.sgs>
+- Catálogo de séries do SGS: <https://www3.bcb.gov.br/sgspub/>
+- IPEADATA — API: <https://www.ipeadata.gov.br/api/>
+- Metadados OData: <https://www.ipeadata.gov.br/api/odata4/$metadata>
+
+---
+
 ## Estrutura
 
-```
+```text
 .
 ├── README.md
 ├── requirements.txt
-├── 7_agro_clima/agro_clima.py
-├── 8_compras_publicas/compras_publicas.py
+├── 7_agro_clima/
+│   └── agro_clima.py
+├── 8_compras_publicas/
+│   └── compras_publicas.py
+└── 9_indicadores_economicos/
+    └── indicadores_economicos.py
 ```
+
+## Dependências
+
+As bibliotecas utilizadas pelos exercícios ficam centralizadas em `requirements.txt`. Além das bibliotecas de análise e visualização (`requests`, `pandas`, `numpy`, `matplotlib`, `folium` e `plotly`)
